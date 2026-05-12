@@ -1,4 +1,5 @@
 import tkinter as tk
+from Podaj_Dane_rez import otworz_okno_rezerwacji, otworz_okno_anulowania_rezerwacji, otworz_widok_dostepnosci_stolikow
 #=============================================
 #--- Wymiary i Nazwa Panelu sterowania ---
 #=============================================
@@ -37,9 +38,7 @@ def funkcja_rezerwacji(n):
 #===========================================================================================================
 #MIEJSCE NA KOD FILIPA
 def otworz_liste_gosci():
-    # --- FILIP: TUTAJ WPISZ SWÓJ KOD ---
-    # Tutaj stwórz okno, które wczyta dane z pliku .txt i je wyświetli.
-    print("Filip otwiera listę gości...")
+    otworz_widok_dostepnosci_stolikow()
 #===========================================================================================================
 #KOD MICHAŁA
 def otwórz_mape():
@@ -82,7 +81,7 @@ def otwórz_mape():
 #=================================================================================
 #KOD MICHAŁA
 przycisk_rezerwacje = tk.Button(root,
-                               text="Otwórz Mapę Sali",
+                               text="Wykonaj Rezerwacje",
                                font=("Segoe UI", 14 , "bold"),
                                bg="#007BFF",
                                fg="white",
@@ -91,7 +90,7 @@ przycisk_rezerwacje = tk.Button(root,
                                bd=0,
                                cursor="hand2",
                                activebackground="#0056b3",
-                                command=otwórz_mape)
+                                command=otworz_okno_rezerwacji)
 przycisk_rezerwacje.pack(pady=10)
 #=======================================================================
 #--- PODŚWIETLENIE PRZYCISKU REZERWACJI (MAPA SALI) ---
@@ -106,6 +105,34 @@ def na_wyjscie_przycisku_rezerwacji(e):
 przycisk_rezerwacje.bind("<Enter>", na_wejscie_przycisku_rezerwacji)
 przycisk_rezerwacje.bind("<Leave>", na_wyjscie_przycisku_rezerwacji)
 #=======================================================================
+#--- PRZYCISK ANULOWANIA REZERWACJI ---
+#=======================================================================
+#KOD MICHAŁA
+przycisk_anuluj_rezerwacje = tk.Button(root,
+                                       text="Anuluj Rezerwację",
+                                       font=("Segoe UI", 14 , "bold"),
+                                       bg="#FF9800",
+                                       fg="white",
+                                       width=25,
+                                       height=2,
+                                       bd=0,
+                                       cursor="hand2",
+                                       activebackground="#E68900",
+                                       command=otworz_okno_anulowania_rezerwacji)
+przycisk_anuluj_rezerwacje.pack(pady=10)
+#=======================================================================
+#--- PODŚWIETLENIE PRZYCISKU ANULOWANIA REZERWACJI ---
+#=======================================================================
+#KOD MICHAŁA
+def na_wejscie_przycisku_anuluj_rezerwacje(e):
+    przycisk_anuluj_rezerwacje["bg"] = "#E68900"
+
+def na_wyjscie_przycisku_anuluj_rezerwacje(e):
+    przycisk_anuluj_rezerwacje["bg"] = "#FF9800"
+
+przycisk_anuluj_rezerwacje.bind("<Enter>", na_wejscie_przycisku_anuluj_rezerwacje)
+przycisk_anuluj_rezerwacje.bind("<Leave>", na_wyjscie_przycisku_anuluj_rezerwacje)
+#=======================================================================
 #--- PRZYCISK LISTA GOŚCI ---
 #=======================================================================
 #KOD MICHAŁA
@@ -119,7 +146,7 @@ przycisk_lista_gości = tk.Button(root,
                                  bd=0,
                                  cursor="hand2",
                                  activebackground="#0056b3",
-                                 command=otworz_liste_gosci())
+                                 command=otworz_liste_gosci)
 przycisk_lista_gości.pack(pady=10)
 #==================================================================
 #--- PODSWIETLENIE PRZYCISKU LISTA GOŚCI ---
