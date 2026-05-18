@@ -213,96 +213,111 @@ def otworz_okno_rezerwacji():
     okno.mainloop()
 
 def otworz_okno_anulowania_rezerwacji():
-    """Okno do anulowania rezerwacji po weryfikacji imienia i nazwiska"""
+    """Okno do anulowania rezerwacji - wyświetla listę i pozwala kliknąć aby usunąć"""
     okno = tk.Tk()
     okno.title("Anulowanie Rezerwacji")
-    okno.geometry("550x400")
+    okno.geometry("900x550")
     okno.config(bg="#F0F2F5")
 
     # Tytuł
-    tk.Label(okno, text="Anulowanie Rezerwacji", font=("Segoe UI", 18, "bold"), bg="#F0F2F5", fg="#1C1E21").pack(pady=(15, 10))
+    tk.Label(okno, text="Anulowanie Rezerwacji - Kliknij aby usunąć", font=("Segoe UI", 18, "bold"), bg="#F0F2F5", fg="#1C1E21").pack(pady=(15, 10))
+
+    # Ramka do scrollowania
+    canvas_frame = tk.Frame(okno, bg="#F0F2F5")
+    canvas_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+    # Canvas z scrollbarem
+    canvas = tk.Canvas(canvas_frame, bg="#F0F2F5", highlightthickness=0)
+    scrollbar = ttk.Scrollbar(canvas_frame, orient="vertical", command=canvas.yview)
+    scrollable_frame = tk.Frame(canvas, bg="#F0F2F5")
+
+    scrollable_frame.bind(
+        "<Configure>",
+        lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+    )
+
+    canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+    canvas.configure(yscrollcommand=scrollbar.set)
+    canvas.pack(side="left", fill="both", expand=True)
+    scrollbar.pack(side="right", fill="y")
+
+    # Pobierz dane rezerwacji
+    rezerwacje = []
+    files = [f for f in os.listdir(REZERWACJE_DIR) if f.startswith("rezerwacja_") and f.endswith(".json")]
     
-    tk.Label(okno, text="Podaj imię i nazwisko", font=("Segoe UI", 11, "bold"), bg="#F0F2F5", fg="#1C1E21").pack(pady=(10, 0))
+    for file in sorted(files):
+        try:
+            with open(os.path.join(REZERWACJE_DIR, file), 'r', encoding='utf-8') as f:
+                rez = json.load(f)
+                rezerwacje.append((file, rez))
+        except:
+            pass
+
+    # Utwórz nagłówek tabeli
+    table_frame = tk.Frame(scrollable_frame, bg="#F0F2F5")
+    table_frame.pack(fill=tk.X)
+
+    header_bg = "#007BFF"
+    header_fg = "white"
     
-    entry_imie = tk.Entry(okno, width=50, font=("Segoe UI", 11), bg="white", fg="#1C1E21", relief="solid", bd=1)
-    entry_imie.pack(pady=(0, 10))
+    tk.Label(table_frame, text="Nr", font=("Segoe UI", 10, "bold"), bg=header_bg, fg=header_fg, width=6, anchor="center", relief="solid", bd=1).pack(side=tk.LEFT, padx=1, pady=1)
+    tk.Label(table_frame, text="Imię i Nazwisko", font=("Segoe UI", 10, "bold"), bg=header_bg, fg=header_fg, width=20, anchor="w", relief="solid", bd=1).pack(side=tk.LEFT, padx=1, pady=1)
+    tk.Label(table_frame, text="Stolik", font=("Segoe UI", 10, "bold"), bg=header_bg, fg=header_fg, width=8, anchor="center", relief="solid", bd=1).pack(side=tk.LEFT, padx=1, pady=1)
+    tk.Label(table_frame, text="Godzina", font=("Segoe UI", 10, "bold"), bg=header_bg, fg=header_fg, width=10, anchor="center", relief="solid", bd=1).pack(side=tk.LEFT, padx=1, pady=1)
+    tk.Label(table_frame, text="Osoby", font=("Segoe UI", 10, "bold"), bg=header_bg, fg=header_fg, width=8, anchor="center", relief="solid", bd=1).pack(side=tk.LEFT, padx=1, pady=1)
+    tk.Label(table_frame, text="Uwagi", font=("Segoe UI", 10, "bold"), bg=header_bg, fg=header_fg, width=25, anchor="w", relief="solid", bd=1).pack(side=tk.LEFT, padx=1, pady=1)
 
-    info_label = tk.Label(okno, text="", font=("Segoe UI", 10), fg="#555555", bg="#F0F2F5")
-    info_label.pack(pady=5)
+    # Wyświetl każdą rezerwację jako clickable row
+    for idx, (filename, rez) in enumerate(rezerwacje):
+        row_frame = tk.Frame(scrollable_frame, bg="#F0F2F5", height=40)
+        row_frame.pack(fill=tk.X)
 
-    lista_rezerwacji = tk.Listbox(okno, width=65, height=7, font=("Segoe UI", 9), bg="white", fg="#1C1E21", relief="solid", bd=1)
-    lista_rezerwacji.pack(pady=5)
+        numer = rez.get("numer", 0)
+        imie = rez.get("imie_nazwisko", "")
+        stolik = rez.get("stolik", "")
+        godzina = rez.get("godzina", "")
+        osoby = rez.get("liczba_osob", "")
+        uwagi = rez.get("uwagi", "")
 
-    def szukaj_rezerwacji():
-        """Szuka rezerwacji na podstawie imienia"""
-        lista_rezerwacji.delete(0, tk.END)
-        info_label.config(text="")
+        bg_color = "#E8F4F8" if idx % 2 == 0 else "white"
+
+        def create_delete_function(file_to_delete, rez_num):
+            def delete_reservation():
+                if messagebox.askyesno("Potwierdzenie", f"Czy na pewno chcesz anulować rezerwację #{rez_num:03d}?"):
+                    try:
+                        os.remove(os.path.join(REZERWACJE_DIR, file_to_delete))
+                        messagebox.showinfo("Sukces", f"Rezerwacja #{rez_num:03d} została anulowana")
+                        okno.destroy()
+                        otworz_okno_anulowania_rezerwacji()
+                    except Exception as e:
+                        messagebox.showerror("Błąd", f"Nie udało się usunąć rezerwacji: {str(e)}")
+            return delete_reservation
+
+        # Tworzymy clickable elementy
+        tk.Label(row_frame, text=f"{numer:03d}", font=("Segoe UI", 9), bg=bg_color, fg="#1C1E21", width=6, anchor="center", relief="flat", bd=1, cursor="hand2").pack(side=tk.LEFT, padx=1, pady=1, fill=tk.BOTH, expand=False)
         
-        imie = entry_imie.get().strip()
-        if not imie:
-            messagebox.showerror("Błąd", "Podaj imię i nazwisko")
-            return
-
-        # Szukaj rezerwacji
-        znalezione = []
-        files = [f for f in os.listdir(REZERWACJE_DIR) if f.startswith("rezerwacja_") and f.endswith(".json")]
+        imie_label = tk.Label(row_frame, text=imie, font=("Segoe UI", 9), bg=bg_color, fg="#1C1E21", width=20, anchor="w", relief="flat", bd=1, cursor="hand2")
+        imie_label.pack(side=tk.LEFT, padx=1, pady=1, fill=tk.BOTH, expand=False)
         
-        for file in files:
-            try:
-                with open(os.path.join(REZERWACJE_DIR, file), 'r', encoding='utf-8') as f:
-                    rez = json.load(f)
-                    if rez.get("imie_nazwisko", "").lower() == imie.lower():
-                        znalezione.append((file, rez))
-            except:
-                pass
+        tk.Label(row_frame, text=str(stolik), font=("Segoe UI", 9), bg=bg_color, fg="#1C1E21", width=8, anchor="center", relief="flat", bd=1, cursor="hand2").pack(side=tk.LEFT, padx=1, pady=1, fill=tk.BOTH, expand=False)
+        tk.Label(row_frame, text=godzina, font=("Segoe UI", 9), bg=bg_color, fg="#1C1E21", width=10, anchor="center", relief="flat", bd=1, cursor="hand2").pack(side=tk.LEFT, padx=1, pady=1, fill=tk.BOTH, expand=False)
+        tk.Label(row_frame, text=str(osoby), font=("Segoe UI", 9), bg=bg_color, fg="#1C1E21", width=8, anchor="center", relief="flat", bd=1, cursor="hand2").pack(side=tk.LEFT, padx=1, pady=1, fill=tk.BOTH, expand=False)
+        tk.Label(row_frame, text=uwagi[:25] if uwagi else "-", font=("Segoe UI", 9), bg=bg_color, fg="#1C1E21", width=25, anchor="w", relief="flat", bd=1, cursor="hand2").pack(side=tk.LEFT, padx=1, pady=1, fill=tk.BOTH, expand=True)
 
-        if not znalezione:
-            info_label.config(text=f"Nie znaleziono rezerwacji dla: {imie}", fg="#E41E3F", bg="#F0F2F5")
-            return
+        delete_func = create_delete_function(filename, numer)
 
-        info_label.config(text=f"Znaleziono {len(znalezione)} rezerwację(e). Wybierz rezerwację do anulowania:", fg="#2ECC71", bg="#F0F2F5")
+        for widget in row_frame.winfo_children():
+            widget.bind("<Button-1>", lambda e: delete_func())
+            def on_enter(event):
+                event.widget.config(relief="raised")
+            def on_leave(event):
+                event.widget.config(relief="flat")
+            widget.bind("<Enter>", on_enter)
+            widget.bind("<Leave>", on_leave)
 
-        for file, rez in znalezione:
-            numer = rez.get("numer", "N/A")
-            stolik = rez.get("stolik", "N/A")
-            godzina = rez.get("godzina", "N/A")
-            osoby = rez.get("liczba_osob", "N/A")
-            cena = rez.get("cena_pln", "N/A")
-            
-            tekst = f"Rez. #{numer:03d} | Stolik {stolik} | {godzina} | {osoby} osób | {cena} PLN"
-            lista_rezerwacji.insert(tk.END, tekst)
-            # Przechowaj nazwę pliku jako dane dla każdego elementu
-            lista_rezerwacji.itemconfig(tk.END, {"bg": "#E8F4F8"})
-
-    def anuluj_rezerwacje():
-        """Usuwa wybraną rezerwację"""
-        if lista_rezerwacji.curselection():
-            index = lista_rezerwacji.curselection()[0]
-            
-            # Szukaj rezerwacji ponownie aby uzyskać nazwy plików
-            imie = entry_imie.get().strip()
-            files = [f for f in os.listdir(REZERWACJE_DIR) if f.startswith("rezerwacja_") and f.endswith(".json")]
-            
-            licznik = 0
-            for file in sorted(files):
-                try:
-                    with open(os.path.join(REZERWACJE_DIR, file), 'r', encoding='utf-8') as f:
-                        rez = json.load(f)
-                        if rez.get("imie_nazwisko", "").lower() == imie.lower():
-                            if licznik == index:
-                                # Usuń plik
-                                os.remove(os.path.join(REZERWACJE_DIR, file))
-                                messagebox.showinfo("Sukces", f"Rezerwacja #{rez.get('numer', 'N/A')} została anulowana")
-                                okno.destroy()
-                                return
-                            licznik += 1
-                except:
-                    pass
-        else:
-            messagebox.showerror("Błąd", "Wybierz rezerwację do anulowania")
-
-    tk.Button(btn_frame, text="Szukaj", command=szukaj_rezerwacji, font=("Segoe UI", 11, "bold"), bg="#007BFF", fg="white", width=18, height=2, bd=0, cursor="hand2", activebackground="#0056b3").pack(side=tk.LEFT, padx=5)
-    tk.Button(btn_frame, text="Anuluj Rezerwację", command=anuluj_rezerwacje, font=("Segoe UI", 11, "bold"), bg="#FF9800", fg="white", width=18, height=2, bd=0, cursor="hand2", activebackground="#E68900").pack(side=tk.LEFT, padx=5)
+    # Info
+    info_label = tk.Label(okno, text="Kliknij na rezerwację aby ją usunąć", font=("Segoe UI", 10, "italic"), bg="#F0F2F5", fg="#666666")
+    info_label.pack(pady=10)
 
     okno.mainloop()
 
